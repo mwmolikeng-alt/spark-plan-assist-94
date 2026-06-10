@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FeatureCard } from "./FeatureCard";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Copy, Check } from "lucide-react";
 
 type Tone = "Formal" | "Informal" | "Persuasive";
 type Audience = "Client" | "Manager" | "Team";
@@ -148,15 +148,21 @@ function generate(topic: string, tone: Tone, audience: Audience) {
   return `${subject}\n\n${greeting}\n\n${body}\n\n${signoff}\n[Your Name]`;
 }
 
-export function EmailGenerator() {
+export function EmailGenerator({ onBack }: { onBack?: () => void }) {
   const [topic, setTopic] = useState("");
   const [tone, setTone] = useState<Tone>("Formal");
   const [audience, setAudience] = useState<Audience>("Client");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const onGenerate = () => {
-    if (!topic.trim()) return;
+    if (!topic.trim()) {
+      setError("Please describe what the email is about");
+      return;
+    }
+    setError("");
     setLoading(true);
     setTimeout(() => {
       setOutput(generate(topic, tone, audience));
@@ -164,16 +170,23 @@ export function EmailGenerator() {
     }, 600);
   };
 
+  const copy = async () => {
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <FeatureCard title="Smart Email Generator" description="Draft polished emails in seconds.">
+    <FeatureCard title="Smart Email Generator" description="Draft polished emails in seconds." onBack={onBack}>
       <div className="space-y-2">
         <Label htmlFor="email-topic">What is this email about?</Label>
         <Input
           id="email-topic"
-          placeholder="e.g. Project update for Q3 launch"
+          placeholder="Need deadline extension for project"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
         />
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -210,6 +223,10 @@ export function EmailGenerator() {
         <div className="space-y-2">
           <Label htmlFor="email-output">Generated Email</Label>
           <Textarea id="email-output" readOnly value={output} className="min-h-[280px] font-mono text-sm" />
+          <Button variant="outline" size="sm" onClick={copy}>
+            {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+            {copied ? "Copied!" : "Copy to Clipboard"}
+          </Button>
         </div>
       )}
     </FeatureCard>

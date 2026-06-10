@@ -268,13 +268,18 @@ function Section({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-export function NotesSummarizer() {
+export function NotesSummarizer({ onBack }: { onBack?: () => void }) {
   const [notes, setNotes] = useState("");
   const [result, setResult] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const onSummarize = () => {
-    if (!notes.trim()) return;
+    if (!notes.trim()) {
+      setError("Please paste your meeting notes");
+      return;
+    }
+    setError("");
     setLoading(true);
     setTimeout(() => {
       setResult(generateSummary(notes));
@@ -283,27 +288,28 @@ export function NotesSummarizer() {
   };
 
   return (
-    <FeatureCard title="Meeting Notes Summarizer" description="Turn raw meeting notes into structured takeaways.">
+    <FeatureCard title="Meeting Notes Summarizer" description="Turn raw meeting notes into structured takeaways." onBack={onBack}>
       <div className="space-y-2">
         <Label htmlFor="notes">Paste your meeting notes</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Paste notes here. Mention topics like budget, deadlines, hiring, marketing, product, sales, design, tech, targets, or operations for more relevant summaries."
+          placeholder="Paste your meeting notes here..."
           className="min-h-[200px]"
         />
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
-      <Button onClick={onSummarize} disabled={loading || !notes.trim()}>
+      <Button onClick={onSummarize} disabled={loading}>
         {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
         Summarize Notes
       </Button>
       {result && (
         <div className="space-y-5 pt-2 border-t border-border">
           <div className="grid md:grid-cols-3 gap-5">
-            <Section title="Key Points" items={result.keyPoints} />
-            <Section title="Decisions Made" items={result.decisions} />
-            <Section title="Action Items" items={result.actions} />
+            <Section title="📌 Key Points" items={result.keyPoints} />
+            <Section title="✅ Decisions Made" items={result.decisions} />
+            <Section title="⚡ Action Items" items={result.actions} />
           </div>
         </div>
       )}
