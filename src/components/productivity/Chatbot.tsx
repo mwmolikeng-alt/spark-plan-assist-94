@@ -2,34 +2,40 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FeatureCard } from "./FeatureCard";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const replies = [
-  "Great question. A simple framework: identify your single most important outcome today, block 90 minutes for it, and silence notifications during that window.",
-  "Try the 2-minute rule — if a task takes under two minutes, do it immediately. Otherwise schedule or delegate it.",
-  "Burnout often comes from unclear priorities, not too much work. Write down your top 3 outcomes for the week and revisit them daily.",
-  "Consider batching meetings into specific days to protect deep work blocks on the other days.",
-  "Energy management matters more than time management. Schedule demanding work when you naturally feel sharpest.",
-  "Reviewing your week on Friday for 15 minutes pays off massively. Note what worked, what didn't, and one experiment for next week.",
+const tips = [
+  "Try the Pomodoro technique — 25 minutes of focus, then a 5-minute break. Repeat four times, then take a longer rest.",
+  "Block your calendar for deep work in the first 90 minutes of your day, before email or Slack.",
+  "Use the 2-minute rule: if a task takes under two minutes, do it immediately instead of adding it to your list.",
+  "Time-block your week on Sunday or Monday morning — decide when work happens, not just what.",
+  "Batch similar tasks together (emails, calls, admin) to reduce costly context-switching.",
 ];
 
 function reply(input: string): string {
-  const lower = input.toLowerCase();
-  if (/(hello|hi|hey)/.test(lower)) return "Hi! I'm your productivity coach. What are you working on today?";
-  if (/(stress|overwhelm|burn)/.test(lower)) return replies[2];
-  if (/(meeting)/.test(lower)) return replies[3];
-  if (/(focus|distract)/.test(lower)) return replies[0];
-  if (/(time|schedule)/.test(lower)) return replies[1];
-  return replies[Math.floor(Math.random() * replies.length)];
+  const lower = input.toLowerCase().trim();
+  if (/^(hello|hi|hey|yo|hiya)\b/.test(lower)) {
+    return "Hello! I'm your AI workmate. Need help with emails, tasks, or research?";
+  }
+  if (/email/.test(lower)) return "Try our Email Generator in the sidebar! It can draft formal, informal, or persuasive emails for any audience.";
+  if (/(task|plan|todo|to do|schedule)/.test(lower)) return "Use the Task Planner to organize your day! Just list your tasks and I'll sort them by urgency.";
+  if (/(focus|productivity tip|tip|distract|deep work|pomodoro|time block)/.test(lower)) {
+    return tips[Math.floor(Math.random() * tips.length)];
+  }
+  if (/(meeting|notes|summary|summarize)/.test(lower)) return "Paste your meeting notes into the Notes Summarizer to get key points, decisions, and action items in seconds.";
+  if (/(research|topic|learn about)/.test(lower)) return "Head to the Research Assistant — type any topic and you'll get a summary, key insights, and recommendations.";
+  return "That's a great question! Can you tell me more about what you need?";
 }
 
-export function Chatbot() {
-  const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "Hi! I'm your AI productivity coach. Ask me anything about focus, planning, or workplace habits." },
-  ]);
+const INITIAL: Msg[] = [
+  { role: "assistant", content: "Hi! I'm your AI workmate. Ask me about emails, tasks, focus, or anything productivity-related." },
+];
+
+export function Chatbot({ onBack }: { onBack?: () => void }) {
+  const [messages, setMessages] = useState<Msg[]>(INITIAL);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -47,11 +53,13 @@ export function Chatbot() {
     setTimeout(() => {
       setMessages((m) => [...m, { role: "assistant", content: reply(text) }]);
       setThinking(false);
-    }, 700);
+    }, 600);
   };
 
+  const clear = () => setMessages(INITIAL);
+
   return (
-    <FeatureCard title="AI Chatbot" description="Your always-on workplace productivity coach.">
+    <FeatureCard title="AI Chatbot" description="Your always-on workplace productivity coach." onBack={onBack}>
       <div className="border border-border rounded-lg bg-muted/30 h-[480px] flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((m, i) => (
@@ -84,7 +92,7 @@ export function Chatbot() {
         </div>
         <div className="border-t border-border p-3 flex gap-2 bg-card rounded-b-lg">
           <Input
-            placeholder="Ask your productivity coach…"
+            placeholder="Ask me anything about productivity..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
@@ -94,6 +102,9 @@ export function Chatbot() {
           </Button>
         </div>
       </div>
+      <Button variant="outline" size="sm" onClick={clear} className="w-fit">
+        <Trash2 className="h-4 w-4 mr-2" /> Clear Chat
+      </Button>
     </FeatureCard>
   );
 }
