@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FeatureCard } from "./FeatureCard";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, Copy, Download, AlertCircle, CheckCircle2, MinusCircle } from "lucide-react";
+import { toast } from "sonner";
 
-type Summary = { keyPoints: string[]; decisions: string[]; actions: string[] };
+type Sentiment = "Positive" | "Neutral" | "Action Required";
+type Summary = { keyPoints: string[]; decisions: string[]; actions: string[]; sentiment: Sentiment };
 
 const NAMES = ["Sarah", "John", "Alex", "Emily", "Marcus", "Team", "David", "Lisa"];
 
@@ -248,10 +250,17 @@ function generateSummary(notes: string): Summary {
     return text;
   };
 
+  // Detect sentiment from notes
+  const lower = notes.toLowerCase();
+  let sentiment: Sentiment = "Neutral";
+  if (/(urgent|blocker|delay|risk|issue|problem|critical|asap)/.test(lower)) sentiment = "Action Required";
+  else if (/(great|excellent|on track|progress|win|approved|achieved|success)/.test(lower)) sentiment = "Positive";
+
   return {
     keyPoints: keyPoints.map(inject),
     decisions: decisions.map(inject),
     actions: actionItems,
+    sentiment,
   };
 }
 
@@ -277,6 +286,7 @@ export function NotesSummarizer({ onBack }: { onBack?: () => void }) {
   const onSummarize = () => {
     if (!notes.trim()) {
       setError("Please paste your meeting notes");
+      toast.error("Notes are empty");
       return;
     }
     setError("");
@@ -285,6 +295,38 @@ export function NotesSummarizer({ onBack }: { onBack?: () => void }) {
       setResult(generateSummary(notes));
       setLoading(false);
     }, 800);
+  };
+
+  const summaryText = () =>
+    !result ? "" :
+    `KEY POINTS\n${result.keyPoints.map(p => "• " + p).join("\n")}\n\nDECISIONS\n${result.decisions.map(p => "• " + p).join("\n")}\n\nACTION ITEMS\n${result.actions.map(p => "• " + p).join("\n")}\n\nSENTIMENT: ${result.sentiment}`;
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(summaryText());
+    toast.success("Summary copied");
+  };
+  const download = () => {
+    const blob = new Blob([summaryText()], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `workly-summary-${Date.now()}.txt`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Summary exported");
+  };
+
+  const sentimentBadge = (s: Sentiment) => {
+    const map = {
+      Positive: { icon: CheckCircle2, cls: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" },
+      Neutral: { icon: MinusCircle, cls: "bg-blue-500/10 text-blue-500 border-blue-500/30" },
+      "Action Required": { icon: AlertCircle, cls: "bg-amber-500/10 text-amber-500 border-amber-500/30" },
+    } as const;
+    const Item = map[s];
+    const Icon = Item.icon;
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${Item.cls}`}>
+        <Icon className="h-3.5 w-3.5" /> {s}
+      </span>
+    );
   };
 
   return (
@@ -306,6 +348,16 @@ export function NotesSummarizer({ onBack }: { onBack?: () => void }) {
       </Button>
       {result && (
         <div className="space-y-5 pt-2 border-t border-border">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Meeting sentiment</div>
+              <div className="mt-1">{sentimentBadge(result.sentiment)}</div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={copy}><Copy className="h-4 w-4 mr-2" /> Copy</Button>
+              <Button variant="outline" size="sm" onClick={download}><Download className="h-4 w-4 mr-2" /> Export</Button>
+            </div>
+          </div>
           <div className="grid md:grid-cols-3 gap-5">
             <Section title="📌 Key Points" items={result.keyPoints} />
             <Section title="✅ Decisions Made" items={result.decisions} />
