@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FeatureCard } from "./FeatureCard";
-import { Loader2, Mail, Copy, Check } from "lucide-react";
+import { Loader2, Mail, Copy, Check, RefreshCw, Download } from "lucide-react";
+import { toast } from "sonner";
 
-type Tone = "Formal" | "Informal" | "Persuasive";
-type Audience = "Client" | "Manager" | "Team";
+type Tone = "Formal" | "Informal" | "Persuasive" | "Friendly" | "Executive";
+type Audience = "Client" | "Manager" | "Team" | "Stakeholder";
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -16,12 +17,15 @@ const greetings: Record<Audience, string[]> = {
   Client: ["Dear Client,", "Dear Client,", "Hello,"],
   Manager: ["Hi [Manager],", "Hello [Manager],", "Hi [Manager], hope your week is going well."],
   Team: ["Hi team,", "Hey team,", "Hi all,"],
+  Stakeholder: ["Dear Stakeholder,", "Hello,", "Dear all,"],
 };
 
 const signoffs: Record<Tone, string[]> = {
   Formal: ["Best regards,", "Kind regards,", "Sincerely,"],
   Informal: ["Cheers,", "Thanks,", "Talk soon,"],
   Persuasive: ["Best regards,", "Looking forward,", "Thanks in advance,"],
+  Friendly: ["Warm regards,", "All the best,", "Thanks so much,"],
+  Executive: ["Best,", "Regards,", "Thank you,"],
 };
 
 // Detect topic intent for more relevant bodies
@@ -220,13 +224,26 @@ export function EmailGenerator({ onBack }: { onBack?: () => void }) {
       </Button>
 
       {output && (
-        <div className="space-y-2">
-          <Label htmlFor="email-output">Generated Email</Label>
-          <Textarea id="email-output" readOnly value={output} className="min-h-[280px] font-mono text-sm" />
-          <Button variant="outline" size="sm" onClick={copy}>
-            {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-            {copied ? "Copied!" : "Copy to Clipboard"}
-          </Button>
+        <div className="space-y-3 pt-2 border-t border-border">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="email-output" className="text-sm font-semibold">Generated Email</Label>
+            <span className="text-xs text-muted-foreground tabular-nums">{output.length} characters · {output.split(/\s+/).length} words</span>
+          </div>
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <Textarea id="email-output" readOnly value={output} className="min-h-[280px] font-mono text-sm bg-transparent border-0 focus-visible:ring-0 resize-none p-0" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={copy}>
+              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={onGenerate} disabled={loading}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Regenerate
+            </Button>
+            <Button variant="outline" size="sm" onClick={download}>
+              <Download className="h-4 w-4 mr-2" /> Download .txt
+            </Button>
+          </div>
         </div>
       )}
     </FeatureCard>
