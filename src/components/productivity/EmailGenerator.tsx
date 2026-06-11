@@ -178,6 +178,18 @@ export function EmailGenerator({ onBack }: { onBack?: () => void }) {
     await navigator.clipboard.writeText(output);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    toast.success("Email copied to clipboard");
+  };
+
+  const download = () => {
+    const blob = new Blob([output], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `workly-email-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Email downloaded");
   };
 
   return (
@@ -202,6 +214,8 @@ export function EmailGenerator({ onBack }: { onBack?: () => void }) {
               <SelectItem value="Formal">Formal</SelectItem>
               <SelectItem value="Informal">Informal</SelectItem>
               <SelectItem value="Persuasive">Persuasive</SelectItem>
+              <SelectItem value="Friendly">Friendly</SelectItem>
+              <SelectItem value="Executive">Executive</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -213,6 +227,7 @@ export function EmailGenerator({ onBack }: { onBack?: () => void }) {
               <SelectItem value="Client">Client</SelectItem>
               <SelectItem value="Manager">Manager</SelectItem>
               <SelectItem value="Team">Team</SelectItem>
+              <SelectItem value="Stakeholder">Stakeholder</SelectItem>
             </SelectContent>
           </Select>
         </div>
